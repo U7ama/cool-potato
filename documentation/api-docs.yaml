@@ -1,0 +1,28 @@
+openapi: 3.0.0
+info:
+  title: Recipe API Documentation
+  version: "1.0.0"
+  description: A simple API to process images for recipes
+paths:
+  /api/process-image:
+    post:
+      summary: Process an image to identify ingredients and fetch recipes.
+      description: This endpoint accepts an image in base64 format and returns recipes based on identified ingredients.
+      consumes:
+        - application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  description: The image to process, encoded in base64.
+                  example: "9j/4AAQSkZJRgABAQAAAQABAAD..."
+      responses:
+        200:
+          description: Recipes fetched successfully.
+        500:
+          description: An error occurred.
