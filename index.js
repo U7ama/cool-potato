@@ -1,10 +1,11 @@
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
-const recipeRoutes = require("./routes/Recipe");
+const recipeRoutes = require("./routes/recipe");
 const mongoose = require("mongoose");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocs = require("./documentation/docs");
+const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -18,6 +19,8 @@ mongoose
   .catch((err) => console.log(err));
 
 app.use("/api", recipeRoutes);
+app.use("/api/auth", authRoutes);
+
 app.use(
   "/",
   swaggerUi.serve,

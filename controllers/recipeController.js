@@ -1,5 +1,5 @@
 const axios = require("axios");
-const Recipe = require("../models/Recipe");
+const FavoriteRecipe = require("../models/FavoriteRecipe");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.AI_API_KEY);
@@ -36,23 +36,8 @@ async function fetchRecipes(ingredients) {
   return response.data;
 }
 
-async function saveRecipes(recipes) {
-  // Loop through recipes and save them to MongoDB
-  for (const recipe of recipes) {
-    const newRecipe = new Recipe({
-      title: recipe.title,
-      ingredients: recipe.usedIngredients.map((ing) => ing.name),
-      instructions: "", // You might need another API call to get detailed instructions
-      image: recipe.image,
-      sourceUrl: recipe.sourceUrl,
-    });
-    await newRecipe.save();
-  }
-}
-
 exports.processImageAndFetchRecipes = async (req, res) => {
   try {
-    // Assuming the base64 image is sent in the body with the key 'image'
     const ingredientsString = await identifyIngredients(req.body.image);
     const ingredients = ingredientsString.split(",").map((item) => item.trim());
     console.log("ingredients", ingredients);
@@ -69,5 +54,114 @@ exports.processImageAndFetchRecipes = async (req, res) => {
       message: "An error occurred",
       error: error.message,
     });
+  }
+};
+
+exports.addToFavorites = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { recipeId } = req.body;
+
+    const existingFavorite = await FavoriteRecipe.findOne({
+      user: userId,
+      recipe: recipeId,
+    });
+    if (existingFavorite) {
+      return res.status(400).json({ message: "Recipe already in favorites" });
+    }
+
+    const newFavorite = new FavoriteRecipe({
+      user: userId,
+      recipe: recipeId,
+    });
+
+    await newFavorite.save();
+    res.status(201).json({ message: "Recipe added to favorites" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Fetch Favorite Recipes for a User
+exports.getFavorites = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const favorites = await FavoriteRecipe.find({ user: userId })
+      .populate("recipe")
+      .exec();
+
+    res.json(favorites.map((fav) => fav.recipe));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Fetch Recipe by ID from Spoonacular
+exports.fetchRecipeById = async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+    const url = `${BASE_URL}/recipes/${recipeId}/information?apiKey=${API_KEY}`;
+    const response = await axios.get(url);
+    res.json(response.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Fetch Featured Recipes
+exports.fetchFeaturedRecipes = async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/recipes/random?number=10&apiKey=${API_KEY}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching featured recipes:", error);
+    res.status(500).json({ message: "Failed to fetch featured recipes" });
+  }
+};
+
+// Fetch Popular Recipes
+exports.fetchPopularRecipes = async (req, res) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/recipes/complexSearch?sort=popularity&number=10&apiKey=${API_KEY}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error fetching popular recipes:", error);
+    res.status(500).json({ message: "Failed to fetch popular recipes" });
+  }
+};
+
+exports.searchRecipesByName = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const response = await axios.get(
+      `${BASE_URL}/recipes/complexSearch?query=${query}&number=10&apiKey=${API_KEY}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error searching recipes by name:", error);
+    res.status(500).json({ message: "Failed to search recipes by name" });
+  }
+};
+
+exports.searchRecipesByIngredients = async (req, res) => {
+  try {
+    const { ingredients } = req.query;
+    const response = await axios.get(
+      `${BASE_URL}/recipes/findByIngredients?ingredients=${ingredients}&number=10&apiKey=${API_KEY}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error("Error searching recipes by ingredients:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to search recipes by ingredients" });
   }
 };

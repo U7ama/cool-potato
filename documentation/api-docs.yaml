@@ -4,7 +4,7 @@ info:
   version: "1.0.0"
   description: A simple API to process images for recipes
 paths:
-  /api/process-image:
+  /api/recipe-by-image:
     post:
       summary: Process an image to identify ingredients and fetch recipes.
       description: This endpoint accepts an image in base64 format and returns recipes based on identified ingredients.
@@ -20,9 +20,281 @@ paths:
                 image:
                   type: string
                   description: The image to process, encoded in base64.
-                  example: "9j/4AAQSkZJRgABAQAAAQABAAD..."
+                  example: "Base 64 here i.e 9j/4AAQSkZJRgABAQAAAQABAAD..."
       responses:
         200:
           description: Recipes fetched successfully.
         500:
           description: An error occurred.
+
+  /api/search-by-name:
+    get:
+      summary: Search recipes by name
+      description: Allows users to search for recipes based on a name query.
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+          description: The recipe name or keyword to search for.
+      responses:
+        200:
+          description: A list of recipes matching the search query.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Recipe"
+        500:
+          description: Server error.
+
+  /api/search-by-ingredients:
+    get:
+      summary: Search recipes by ingredients
+      description: Allows users to search for recipes based on a list of ingredients.
+      parameters:
+        - in: query
+          name: ingredients
+          required: true
+          schema:
+            type: string
+          description: A comma-separated list of ingredients to search for in recipes.
+      responses:
+        200:
+          description: A list of recipes matching the provided ingredients.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Recipe"
+        500:
+          description: Server error.
+
+  /api/featured-recipes:
+    get:
+      summary: Fetch featured recipes
+      description: Retrieves a list of featured recipes from Spoonacular. These are selected randomly to showcase a variety of options.
+      responses:
+        200:
+          description: A list of featured recipes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+        500:
+          description: Server error.
+
+  /api/popular-recipes:
+    get:
+      summary: Fetch popular recipes
+      description: Retrieves a list of popular recipes based on certain criteria (e.g., user ratings) from Spoonacular.
+      responses:
+        200:
+          description: A list of popular recipes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+        500:
+          description: Server error.
+
+  /api/auth/signup:
+    post:
+      summary: Register a new user.
+      description: This endpoint registers a new user with their email, password, and name.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: User's email.
+                password:
+                  type: string
+                  description: User's password.
+                name:
+                  type: string
+                  description: User's name.
+      responses:
+        201:
+          description: User registered successfully.
+        400:
+          description: Invalid input data.
+        500:
+          description: Server error.
+
+  /api/auth/signin:
+    post:
+      summary: Authenticate a user and return a JWT.
+      description: This endpoint authenticates a user by their email and password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: User's email.
+                password:
+                  type: string
+                  description: User's password.
+      responses:
+        200:
+          description: Authentication successful, token returned.
+        400:
+          description: Invalid credentials.
+        500:
+          description: Server error.
+
+  /api/auth/update-profile/{userId}:
+    put:
+      summary: Update a user's profile.
+      description: Allows users to update their own profile information. Requires a valid JWT and the user's ID in the path.
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the user to update.
+        - in: header
+          name: Custom-Header
+          required: false
+          schema:
+            type: string
+          description: An example of a custom header you might need to include.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fastFoodFrequency:
+                  type: string
+                  description: How often the user eats fast food.
+                lifestyle:
+                  type: string
+                  description: The user's lifestyle.
+                isDiabetic:
+                  type: boolean
+                  description: Whether the user is diabetic.
+      responses:
+        200:
+          description: Profile updated successfully.
+        400:
+          description: Invalid input data.
+        401:
+          description: Authorization required.
+        404:
+          description: User not found.
+        500:
+          description: Server error.
+
+  /api/add-to-favorites:
+    post:
+      summary: Add a recipe to the user's favorites.
+      description: Adds a specified recipe to the authenticated user's list of favorite recipes. Requires a valid JWT for authentication.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipeId:
+                  type: string
+                  description: The ID of the recipe to add to favorites.
+      responses:
+        201:
+          description: Recipe added to favorites.
+        400:
+          description: Recipe already in favorites or invalid request.
+        401:
+          description: Authentication required.
+        500:
+          description: Server error.
+
+  /api/favorites:
+    get:
+      summary: Fetch the user's favorite recipes.
+      description: Returns a list of the authenticated user's favorite recipes. Requires a valid JWT for authentication.
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Successfully fetched favorite recipes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recipe"
+        401:
+          description: Authentication required.
+        500:
+          description: Server error.
+
+  /api/recipe/{recipeId}:
+    get:
+      summary: Fetch a recipe by ID from Spoonacular.
+      description: Fetches detailed information for a given recipe by its ID from Spoonacular API.
+      parameters:
+        - in: path
+          name: recipeId
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the recipe to fetch.
+      responses:
+        200:
+          description: Recipe details fetched successfully.
+        404:
+          description: Recipe not found.
+        500:
+          description: Server error.
+
+components:
+  schemas:
+    Recipe:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the recipe.
+        title:
+          type: string
+          description: The title of the recipe.
+        image:
+          type: string
+          description: URL of the recipe image.
+        sourceUrl:
+          type: string
+          description: Original URL of the recipe.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
