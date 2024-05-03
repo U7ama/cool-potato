@@ -166,6 +166,52 @@ paths:
           description: Invalid credentials.
         500:
           description: Server error.
+
+  /api/auth/generate-token:
+    post:
+      summary: Generate a JSON Web Token for user authentication
+      description: Generates a JSON Web Token that can be used to authenticate subsequent requests. Requires the user's email address as input.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The user's email address
+                phone:
+                  type: string
+                  format: phone
+                  description: The user's phone number
+      responses:
+        200:
+          description: JSON Web Token generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: The generated JSON Web Token
+                  expirationTime:
+                    type: string
+                    format: date-time
+                    description: The expiration time of the token
+        400:
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: Error message detailing why the request failed
+
   /api/auth/change-password:
     put:
       summary: Change user's password.
@@ -380,6 +426,16 @@ paths:
 
 components:
   schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: The generated JSON Web Token
+        expirationTime:
+          type: string
+          format: date-time
+          description: The expiration time of the token
     Notification:
       type: object
       properties:
@@ -420,7 +476,7 @@ components:
         sourceUrl:
           type: string
           description: Original URL of the recipe.
-  securitySchemes:
+    securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer

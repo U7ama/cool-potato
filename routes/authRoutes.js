@@ -75,7 +75,7 @@ router.post(
       );
     } catch (error) {
       console.error(error.message);
-      res.status(500).send("Server error");
+      res.status(500).send(`Server error: ${error.message}`);
     }
   }
 );
@@ -111,7 +111,8 @@ router.post(
       let user;
       if (email) {
         user = await User.findOne({ email });
-      } else if (phone) {
+      }
+      if (phone) {
         user = await User.findOne({ phone });
       }
 
@@ -128,7 +129,8 @@ router.post(
           password,
           displayName: name,
         });
-      } else if (phone) {
+      }
+      if (phone) {
         userRecord = await admin.auth().createUser({
           phoneNumber: phone,
           password,
@@ -144,42 +146,71 @@ router.post(
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      user = new User({
-        email,
-        phone,
-        fuid: userId,
-        password: hashedPassword,
-        name,
-      });
+      if (email) {
+        const newUser = new User({
+          email,
+          password: hashedPassword,
+          fuid: userId,
+          name,
+        });
+        const savedUser = await newUser.save();
+        const payload = {
+          user: {
+            id: savedUser.id,
+          },
+        };
 
-      const savedUser = await user.save();
+        jwt.sign(
+          payload,
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" },
+          (err, token) => {
+            if (err) throw err;
 
-      const payload = {
-        user: {
-          id: savedUser.id,
-        },
-      };
+            res.json({
+              msg: "User registered successfully",
+              token,
+              userId: savedUser.id,
+              name: savedUser.name,
+              email: savedUser.email,
+            });
+          }
+        );
+      }
+      if (phone) {
+        const newUser = new User({
+          phone,
+          password: hashedPassword,
+          fuid: userId,
+          name,
+        });
+        const savedUser = await newUser.save();
+        const payload = {
+          user: {
+            id: savedUser.id,
+          },
+        };
 
-      jwt.sign(
-        payload,
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" },
-        (err, token) => {
-          if (err) throw err;
+        jwt.sign(
+          payload,
+          process.env.JWT_SECRET,
+          { expiresIn: "1h" },
+          (err, token) => {
+            if (err) throw err;
 
-          res.json({
-            msg: "User registered successfully",
-            token,
-            userId: savedUser.id,
-            name: savedUser.name,
-            email: savedUser.email,
-            phone: savedUser.phone,
-          });
-        }
-      );
+            res.json({
+              msg: "User registered successfully",
+              token,
+              userId: savedUser.id,
+              name: savedUser.name,
+              phone: savedUser.phone,
+            });
+          }
+        );
+      }
     } catch (error) {
       console.error(error.message);
-      res.status(500).send("Server error", error.message);
+      res.status(500).send(`Server error: ${error.message}`);
     }
   }
 );
@@ -227,56 +258,93 @@ router.post("/signin", [body("email").isEmail()], async (req, res) => {
     );
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server error");
+    res.status(500).send(`Server error: ${error.message}`);
   }
 });
 
-router.post("/generate-token", [body("email").isEmail()], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  try {
-    const { email } = req.body;
-
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ msg: "Invalid Credentials" });
+router.post(
+  "/generate-token",
+  [
+    body("email").optional().isEmail().withMessage("Invalid email"),
+    body("phone")
+      .optional()
+      .isMobilePhone()
+      .withMessage("Invalid phone number"),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    // const isMatch = await bcrypt.compare(password, user.password);
-    // if (!isMatch) {
-    //   return res.status(400).json({ msg: "Invalid Credentials" });
-    // }
+    try {
+      const { email, phone } = req.body;
 
-    const payload = {
-      user: {
-        id: user.id,
-      },
-    };
+      if (email) {
+        const user = await User.findOne({ email });
+        if (!user) {
+          return res.status(400).json({ msg: "Invalid Credentials" });
+        } else {
+          const payload = {
+            user: {
+              id: user.id,
+            },
+          };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" },
-      (err, token) => {
-        if (err) throw err;
+          jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" },
+            (err, token) => {
+              if (err) throw err;
 
-        res.json({
-          msg: "Token generated successfully",
-          token,
-          userId: user.id,
-          name: user.name,
-          email: user.email,
-        });
+              res.json({
+                msg: "Token generated successfully",
+                token,
+                userId: user.id,
+                name: user.name,
+                email: user.email,
+              });
+            }
+          );
+        }
       }
-    );
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Server error");
+
+      if (phone) {
+        const user = await User.findOne({ phone });
+        if (!user) {
+          return res.status(400).json({ msg: "Invalid Credentials" });
+        } else {
+          const payload = {
+            user: {
+              id: user.id,
+            },
+          };
+
+          jwt.sign(
+            payload,
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" },
+            (err, token) => {
+              if (err) throw err;
+
+              res.json({
+                msg: "Token generated successfully",
+                token,
+                userId: user.id,
+                name: user.name,
+                phone: user.phone,
+              });
+            }
+          );
+        }
+      }
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send(`Server error: ${error.message}`);
+    }
   }
-});
+);
 
 router.post("/reset-password", async (req, res) => {
   const { newPassword, fuid, email } = req.body;
@@ -358,7 +426,7 @@ router.put(
       res.json({ msg: "Profile updated successfully", user: updatedUser });
     } catch (error) {
       console.error(error.message);
-      res.status(500).send("Server error");
+      res.status(500).send(`Server error: ${error.message}`);
     }
   }
 );
@@ -399,7 +467,7 @@ router.put(
       res.json({ msg: "Password updated successfully" });
     } catch (error) {
       console.error(error.message);
-      res.status(500).send("Server error");
+      res.status(500).send(`Server error: ${error.message}`);
     }
   }
 );
