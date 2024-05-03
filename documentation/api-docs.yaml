@@ -125,6 +125,9 @@ paths:
                 email:
                   type: string
                   description: User's email.
+                phone:
+                  type: string
+                  description: User's phone number.
                 password:
                   type: string
                   description: User's password.
@@ -135,7 +138,7 @@ paths:
         201:
           description: User registered successfully.
         400:
-          description: Invalid input data.
+          description: Invalid input data or both email and phone provided.
         500:
           description: Server error.
 
@@ -161,6 +164,34 @@ paths:
           description: Authentication successful, token returned.
         400:
           description: Invalid credentials.
+        500:
+          description: Server error.
+  /api/auth/change-password:
+    put:
+      summary: Change user's password.
+      description: Allows users to change their password. Requires a valid JWT token and the user's current password.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                currentPassword:
+                  type: string
+                  description: The user's current password.
+                newPassword:
+                  type: string
+                  description: The user's new password.
+      responses:
+        200:
+          description: Password changed successfully.
+        400:
+          description: Invalid input data or current password is incorrect.
+        401:
+          description: Authentication required.
         500:
           description: Server error.
 
@@ -190,6 +221,12 @@ paths:
             schema:
               type: object
               properties:
+                name:
+                  type: string
+                  description: User's name.
+                phone:
+                  type: string
+                  description: User's phone number.
                 fastFoodFrequency:
                   type: string
                   description: How often the user eats fast food.
@@ -199,6 +236,9 @@ paths:
                 isDiabetic:
                   type: boolean
                   description: Whether the user is diabetic.
+                profilePicture:
+                  type: string
+                  description: Update profile picture
       responses:
         200:
           description: Profile updated successfully.
@@ -208,6 +248,27 @@ paths:
           description: Authorization required.
         404:
           description: User not found.
+        500:
+          description: Server error.
+
+  /api/remove-from-favorites/{recipeId}:
+    delete:
+      summary: Remove a recipe from favorites.
+      description: Allows users to remove a recipe from their favorites list. Requires a valid JWT token and the ID of the recipe to be removed.
+      parameters:
+        - in: path
+          name: recipeId
+          required: true
+          schema:
+            type: string
+          description: The ID of the recipe to remove from favorites.
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Recipe removed from favorites successfully.
+        401:
+          description: Authentication required.
         500:
           description: Server error.
 
@@ -276,8 +337,74 @@ paths:
         500:
           description: Server error.
 
+  /api/notifications:
+    get:
+      summary: Get all notifications
+      description: Retrieves all notifications stored in the system.
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: A list of notifications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+        500:
+          description: Server error.
+
+    post:
+      summary: Add a new notification
+      description: Creates a new notification in the system.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationInput"
+      responses:
+        201:
+          description: Notification added successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+        400:
+          description: Invalid input data.
+        500:
+          description: Server error.
+
 components:
   schemas:
+    Notification:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: The unique identifier of the notification.
+        title:
+          type: string
+          description: The title of the notification.
+        message:
+          type: string
+          description: The message content of the notification.
+        createdAt:
+          type: string
+          format: date-time
+          description: The date and time when the notification was created.
+    NotificationInput:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The title of the notification.
+        message:
+          type: string
+          description: The message content of the notification.
     Recipe:
       type: object
       properties:

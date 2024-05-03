@@ -7,6 +7,11 @@ const router = express.Router();
 router.post("/recipe-by-image", recipeController.processImageAndFetchRecipes);
 router.post("/add-to-favorites", auth, recipeController.addToFavorites);
 router.get("/favorites", auth, recipeController.getFavorites);
+router.delete(
+  "/remove-from-favorites/:recipeId",
+  auth,
+  recipeController.removeFromFavorites
+);
 router.get("/recipe/:recipeId", recipeController.fetchRecipeById);
 router.get("/featured-recipes", recipeController.fetchFeaturedRecipes);
 router.get("/popular-recipes", recipeController.fetchPopularRecipes);

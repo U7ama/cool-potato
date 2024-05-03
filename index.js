@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocs = require("./documentation/docs");
 const authRoutes = require("./routes/authRoutes");
+const notificationRoutes = require("./routes/notification");
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -20,6 +21,7 @@ mongoose
 
 app.use("/api", recipeRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api", notificationRoutes);
 
 app.use(
   "/",

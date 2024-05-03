@@ -91,8 +91,32 @@ exports.getFavorites = async (req, res) => {
     const favorites = await FavoriteRecipe.find({ user: userId })
       .populate("recipe")
       .exec();
+    const recipeIds = favorites.map((fav) => fav.recipe);
 
-    res.json(favorites.map((fav) => fav.recipe));
+    const recipesPromises = recipeIds.map(async (recipeId) => {
+      const response = await axios.get(
+        `${BASE_URL}/recipes/${recipeId}/information?apiKey=${API_KEY}`
+      );
+      return response.data;
+    });
+    const recipes = await Promise.all(recipesPromises);
+    res.json(recipes);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Remove a recipe from favorites
+exports.removeFromFavorites = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { recipeId } = req.params;
+
+    // Find and remove the favorite recipe from the database
+    await FavoriteRecipe.findOneAndDelete({ user: userId, recipe: recipeId });
+
+    res.status(200).json({ message: "Recipe removed from favorites" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
