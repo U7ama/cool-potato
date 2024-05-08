@@ -363,6 +363,30 @@ paths:
           description: Authentication required.
         500:
           description: Server error.
+  /api/recipes/{recipeId}/favoritesCount:
+    get:
+      summary: Get favorites count for a recipe
+      description: Returns the count of users who have added the specified recipe to their favorites.
+      parameters:
+        - in: path
+          name: recipeId
+          required: true
+          schema:
+            type: string
+          description: The ID of the recipe to get favorites count for.
+      responses:
+        200:
+          description: Favorites count retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favoritesCount:
+                    type: integer
+                    description: The count of users who have favorited the recipe.
+        500:
+          description: Server error.
 
   /api/recipe/{recipeId}:
     get:
@@ -424,8 +448,71 @@ paths:
         500:
           description: Server error.
 
+  /api/recipes/{recipeId}/addRating:
+    post:
+      summary: Add or update rating for a recipe
+      description: Allows users to add or update a rating for a specific recipe.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                rating:
+                  type: number
+                  minimum: 1
+                  maximum: 5
+                  description: The rating given by the user (1 to 5).
+                recipeId:
+                  type: string
+                  description: Recipe Id for which rating is to be added.
+      responses:
+        201:
+          description: Rating added/updated successfully.
+        400:
+          description: Invalid input data.
+        500:
+          description: Server error.
+
+  /api/recipes/{recipeId}/ratings:
+    get:
+      summary: Get ratings for a recipe
+      description: Retrieves ratings for a specific recipe.
+      parameters:
+        - in: path
+          name: recipeId
+          required: true
+          schema:
+            type: string
+          description: The ID of the recipe to get ratings for.
+      responses:
+        200:
+          description: Ratings retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  averageRating:
+                    type: number
+                    description: The average rating for the recipe.
+                  totalRatings:
+                    type: integer
+                    description: The total number of ratings for the recipe.
+        500:
+          description: Server error.
+
 components:
   schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message.
     AuthResponse:
       type: object
       properties:
@@ -476,7 +563,7 @@ components:
         sourceUrl:
           type: string
           description: Original URL of the recipe.
-    securitySchemes:
+  securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer

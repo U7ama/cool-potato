@@ -1,6 +1,7 @@
 const axios = require("axios");
 const FavoriteRecipe = require("../models/FavoriteRecipe");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Rating = require("../models/Rating");
 
 const genAI = new GoogleGenerativeAI(process.env.AI_API_KEY);
 
@@ -187,5 +188,73 @@ exports.searchRecipesByIngredients = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to search recipes by ingredients" });
+  }
+};
+
+exports.getFavoritesCountForRecipe = async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+
+    // Find the count of favorites for the specified recipe
+    const favoritesCount = await FavoriteRecipe.countDocuments({
+      recipe: recipeId,
+    });
+
+    res.json({ favoritesCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.addRatingForRecipe = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { recipeId, rating } = req.body;
+    console.log(recipeId, rating);
+    // Check if the user has already rated the recipe
+    const existingRating = await Rating.findOne({
+      user: userId,
+      recipeId,
+    });
+
+    if (existingRating) {
+      // If the user has already rated, update the rating
+      existingRating.rating = rating;
+      await existingRating.save();
+    } else {
+      // If the user has not yet rated, create a new rating entry
+      const newRating = new Rating({
+        user: userId,
+        rating,
+        recipeId,
+      });
+      await newRating.save();
+    }
+
+    res.status(201).json({ message: "Rating added/updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Get ratings for a specific recipe
+exports.getRatingsForRecipe = async (req, res) => {
+  try {
+    const { recipeId } = req.params;
+
+    // Find all ratings for the specified recipe
+    const ratings = await Rating.find({ recipeId });
+
+    // Calculate average rating
+    const totalRatings = ratings.length; // Count the total number of ratings
+    const sumOfRatings = ratings.reduce((acc, curr) => acc + curr.rating, 0);
+    const averageRating = totalRatings > 0 ? sumOfRatings / totalRatings : 0;
+
+    res.json({ averageRating, totalRatings });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };

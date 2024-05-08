@@ -20,5 +20,18 @@ router.get(
   "/search-by-ingredients",
   recipeController.searchRecipesByIngredients
 );
+router.get(
+  "/recipes/:recipeId/favoritesCount",
+  recipeController.getFavoritesCountForRecipe
+);
+
+router.post(
+  "/recipes/:recipeId/addRating",
+  auth,
+  recipeController.addRatingForRecipe
+);
+
+// Route for getting ratings for a recipe
+router.get("/recipes/:recipeId/ratings", recipeController.getRatingsForRecipe);
 
 module.exports = router;
