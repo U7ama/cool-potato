@@ -9,23 +9,27 @@ const API_KEY = process.env.SPOONACULAR_API_KEY;
 const BASE_URL = "https://api.spoonacular.com";
 
 async function identifyIngredients(base64Image) {
-  const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
-  const prompt =
-    "Identify all foods and ingredients you see in the image. Also keep in mind i have to give these names to spoonacular api. If you cannot identify certain items, write 'unknown' instead of giving inaccurate items. Give every item separated by comma in your response";
+  console.log("Identifying ingredients in image");
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const prompt = "Identify all foods and ingredients you see in the image. If you cannot identify certain items, write 'unknown'.";
 
   const imageParts = [
     {
       inlineData: {
         data: base64Image,
-        mimeType: "image/jpeg",
+        mimeType: "image/jpeg", // Ensure you have the correct MIME type
       },
     },
   ];
 
-  const result = await model.generateContent([prompt, ...imageParts]);
-  const response = await result.response;
-  console.log(response.text());
-  return response.text();
+  try {
+    const result = await model.generateContent([prompt, ...imageParts]);
+    const response = result.response; // Adjust this depending on the response structure
+    console.log(response.text());
+    return response.text();
+  } catch (error) {
+    console.error("Error identifying ingredients:", error);
+  }
 }
 
 async function fetchRecipes(ingredients) {
