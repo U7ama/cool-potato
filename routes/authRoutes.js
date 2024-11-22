@@ -472,4 +472,28 @@ router.put(
   }
 );
 
+router.delete("/delete-account", auth, async (req, res) => {
+  try {
+    // Get the user ID from the token (auth middleware)
+    const userId = req.user.id;
+
+    // Find the user in MongoDB
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ msg: "User not found" });
+    }
+
+    // Delete user from Firebase Authentication using the Firebase UID
+    await admin.auth().deleteUser(user.fuid);
+
+    // Delete the user from MongoDB
+    await User.findByIdAndDelete(userId);
+
+    res.json({ msg: "User account deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ msg: "Failed to delete user account" });
+  }
+});
+
 module.exports = router;
