@@ -33,6 +33,7 @@ app.use(
   })
 );
 // Commands for deployment on gcp
+
 // docker build -t usamaa7lam/coolpotato .
 // docker run -e PORT=8080 -p 8080:8080 -d usamaa7lam/coolpotato
 // gcloud auth configure-docker
