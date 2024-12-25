@@ -60,7 +60,6 @@ router.post(
       jwt.sign(
         payload,
         process.env.JWT_SECRET,
-        { expiresIn: "1h" },
         (err, token) => {
           if (err) throw err;
 
@@ -163,7 +162,6 @@ router.post(
         jwt.sign(
           payload,
           process.env.JWT_SECRET,
-          { expiresIn: "1h" },
           (err, token) => {
             if (err) throw err;
 
@@ -194,7 +192,6 @@ router.post(
         jwt.sign(
           payload,
           process.env.JWT_SECRET,
-          { expiresIn: "1h" },
           (err, token) => {
             if (err) throw err;
 
@@ -243,7 +240,6 @@ router.post("/signin", [body("email").isEmail()], async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
       (err, token) => {
         if (err) throw err;
 
@@ -294,7 +290,6 @@ router.post(
           jwt.sign(
             payload,
             process.env.JWT_SECRET,
-            { expiresIn: "1h" },
             (err, token) => {
               if (err) throw err;
 
@@ -324,7 +319,6 @@ router.post(
           jwt.sign(
             payload,
             process.env.JWT_SECRET,
-            { expiresIn: "1h" },
             (err, token) => {
               if (err) throw err;
 
@@ -374,9 +368,16 @@ router.put(
       body("profilePicture").optional(),
       body("fastFoodFrequency")
         .optional()
-        .isIn(["Occasionally", "Frequently", "Rarely", "Never"]),
+        .isIn(["Occasionally", "Frequently", "Rarely", "Never", "Not much", "Used to do it a long time ago"]),
       body("lifestyle").optional(),
-      body("isDiabetic").optional().isBoolean(),
+      body("isDiabetic").optional().custom((value) => {
+        // Check if value is either a boolean or "May be"
+        if (value === "May be" || value === true || value === false) {
+          return true;
+        } else {
+          throw new Error("isDiabetic must be a boolean or 'May be'");
+        }
+      }),
     ],
   ],
   async (req, res) => {

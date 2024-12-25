@@ -2,29 +2,35 @@ const axios = require("axios");
 const FavoriteRecipe = require("../models/FavoriteRecipe");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Rating = require("../models/Rating");
+const User = require("../models/User");
 
 const genAI = new GoogleGenerativeAI(process.env.AI_API_KEY);
 
 const API_KEY = process.env.SPOONACULAR_API_KEY;
 const BASE_URL = "https://api.spoonacular.com";
 
+async function getIsUserDiabetic (userId) {
+  const user = await User.findById(userId).select("isDiabetic");
+  return user.isDiabetic;
+}
+
 async function identifyIngredients(base64Image) {
   console.log("Identifying ingredients in image");
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-  const prompt = "Identify all foods and ingredients you see in the image. If you cannot identify certain items, write 'unknown'.";
+  const prompt = "Identify all foods and ingredients you see in the image. Just give names separated by commas If you cannot identify certain items, write 'unknown'.";
 
   const imageParts = [
     {
       inlineData: {
         data: base64Image,
-        mimeType: "image/jpeg", // Ensure you have the correct MIME type
+        mimeType: "image/jpeg",
       },
     },
   ];
 
   try {
     const result = await model.generateContent([prompt, ...imageParts]);
-    const response = result.response; // Adjust this depending on the response structure
+    const response = result.response;
     console.log(response.text());
     return response.text();
   } catch (error) {
@@ -32,21 +38,27 @@ async function identifyIngredients(base64Image) {
   }
 }
 
-async function fetchRecipes(ingredients) {
+async function fetchRecipes(ingredients, isDiabetic) {
   const ingredientsQuery = ingredients.join(",");
+  console.log("ingredientsQuery", ingredientsQuery);
+  let url = `${BASE_URL}/recipes/findByIngredients?ingredients=${ingredientsQuery}&apiKey=${API_KEY}`;
+  if (isDiabetic) {
+    url = `${BASE_URL}/recipes/complexSearch?includeIngredients=${ingredientsQuery}&diet=diabetic&maxSugar=5&maxCarbs=30&apiKey=${API_KEY}`;
+  }
   const response = await axios.get(
-    `${BASE_URL}/recipes/findByIngredients?ingredients=${ingredientsQuery}&apiKey=${API_KEY}`
+    url
   );
-  console.log("response", response);
+  // console.log("response", response);
   return response.data;
 }
 
 exports.processImageAndFetchRecipes = async (req, res) => {
   try {
+    const isDiabetic = await getIsUserDiabetic(req.user.id);
     const ingredientsString = await identifyIngredients(req.body.image);
     const ingredients = ingredientsString.split(",").map((item) => item.trim());
-    console.log("ingredients", ingredients);
-    const recipes = await fetchRecipes(ingredients);
+    console.log("ingredientsString", ingredients, ingredientsString);
+    const recipes = await fetchRecipes(ingredients, isDiabetic);
 
     res.json({
       success: true,
@@ -144,8 +156,15 @@ exports.fetchRecipeById = async (req, res) => {
 // Fetch Featured Recipes
 exports.fetchFeaturedRecipes = async (req, res) => {
   try {
+    const isDiabetic = await getIsUserDiabetic(req.user.id);
+    console.log("isDiabetic", isDiabetic, req.user.id)
+    let url = `${BASE_URL}/recipes/random?number=10&apiKey=${API_KEY}`;
+
+    if (isDiabetic) {
+      url = `${BASE_URL}/recipes/complexSearch?minRating=4&sort=popularity&number=50&diet=diabetic&maxSugar=5&maxCarbs=30&apiKey=${API_KEY}`;
+    }
     const response = await axios.get(
-      `${BASE_URL}/recipes/random?number=10&apiKey=${API_KEY}`
+      url
     );
     res.json(response.data);
   } catch (error) {
@@ -157,8 +176,15 @@ exports.fetchFeaturedRecipes = async (req, res) => {
 // Fetch Popular Recipes
 exports.fetchPopularRecipes = async (req, res) => {
   try {
+    const isDiabetic = await getIsUserDiabetic(req.user.id);
+
+    let url = `${BASE_URL}/recipes/complexSearch?sort=popularity&number=10&apiKey=${API_KEY}`;
+
+    if (isDiabetic) {
+      url = `${BASE_URL}/recipes/complexSearch?sort=popularity&number=10&diet=diabetic&maxSugar=5&maxCarbs=30&apiKey=${API_KEY}`;
+    }
     const response = await axios.get(
-      `${BASE_URL}/recipes/complexSearch?sort=popularity&number=10&apiKey=${API_KEY}`
+      url
     );
     res.json(response.data);
   } catch (error) {
@@ -170,8 +196,15 @@ exports.fetchPopularRecipes = async (req, res) => {
 exports.searchRecipesByName = async (req, res) => {
   try {
     const { query } = req.query;
+    const isDiabetic = await getIsUserDiabetic(req.user.id);
+
+    let url = `${BASE_URL}/recipes/complexSearch?query=${query}&number=10&apiKey=${API_KEY}`;
+
+    if (isDiabetic) {
+      url = `${BASE_URL}/recipes/complexSearch?query=${query}&number=10&diet=diabetic&maxSugar=5&maxCarbs=30&apiKey=${API_KEY}`;
+    }
     const response = await axios.get(
-      `${BASE_URL}/recipes/complexSearch?query=${query}&number=10&apiKey=${API_KEY}`
+      url
     );
     res.json(response.data);
   } catch (error) {
@@ -183,8 +216,15 @@ exports.searchRecipesByName = async (req, res) => {
 exports.searchRecipesByIngredients = async (req, res) => {
   try {
     const { ingredients } = req.query;
+    const isDiabetic = await getIsUserDiabetic(req.user.id);
+
+    let url = `${BASE_URL}/recipes/findByIngredients?ingredients=${ingredients}&number=10&apiKey=${API_KEY}`;
+
+    if (isDiabetic) {
+      url = `${BASE_URL}/recipes/complexSearch?includeIngredients=${ingredients}&number=10&diet=diabetic&maxSugar=5&maxCarbs=30&apiKey=${API_KEY}`;
+    }
     const response = await axios.get(
-      `${BASE_URL}/recipes/findByIngredients?ingredients=${ingredients}&number=10&apiKey=${API_KEY}`
+      url
     );
     res.json(response.data);
   } catch (error) {

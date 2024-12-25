@@ -10,6 +10,8 @@ paths:
       description: This endpoint accepts an image in base64 format and returns recipes based on identified ingredients.
       consumes:
         - application/json
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -31,6 +33,8 @@ paths:
     get:
       summary: Search recipes by name
       description: Allows users to search for recipes based on a name query.
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: query
@@ -57,6 +61,8 @@ paths:
     get:
       summary: Search recipes by ingredients
       description: Allows users to search for recipes based on a list of ingredients.
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: ingredients
@@ -83,6 +89,8 @@ paths:
     get:
       summary: Fetch featured recipes
       description: Retrieves a list of featured recipes from Spoonacular. These are selected randomly to showcase a variety of options.
+      security:
+        - bearerAuth: []
       responses:
         200:
           description: A list of featured recipes.
@@ -99,6 +107,8 @@ paths:
     get:
       summary: Fetch popular recipes
       description: Retrieves a list of popular recipes based on certain criteria (e.g., user ratings) from Spoonacular.
+      security:
+        - bearerAuth: []
       responses:
         200:
           description: A list of popular recipes.

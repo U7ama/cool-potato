@@ -41,7 +41,7 @@ app.use(
 // docker build -t gcr.io/dev-truth-417707/coolpotato .
 // docker push gcr.io/dev-truth-417707/coolpotato
 // gcloud run deploy coolpotato     --image gcr.io/dev-truth-417707/coolpotato     --platform managed     --region us-central1     --allow-unauthenticated
-
+// docker build -t usamaa7lam/coolpotato . && docker tag usamaa7lam/coolpotato gcr.io/dev-truth-417707/coolpotato && docker build -t gcr.io/dev-truth-417707/coolpotato . && docker push gcr.io/dev-truth-417707/coolpotato && gcloud run deploy coolpotato     --image gcr.io/dev-truth-417707/coolpotato     --platform managed     --region us-central1     --allow-unauthenticated
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
 });

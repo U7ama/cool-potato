@@ -4,7 +4,7 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.post("/recipe-by-image", recipeController.processImageAndFetchRecipes);
+router.post("/recipe-by-image", auth, recipeController.processImageAndFetchRecipes);
 router.post("/add-to-favorites", auth, recipeController.addToFavorites);
 router.get("/favorites", auth, recipeController.getFavorites);
 router.delete(
@@ -12,12 +12,13 @@ router.delete(
   auth,
   recipeController.removeFromFavorites
 );
-router.get("/recipe/:recipeId", recipeController.fetchRecipeById);
-router.get("/featured-recipes", recipeController.fetchFeaturedRecipes);
-router.get("/popular-recipes", recipeController.fetchPopularRecipes);
-router.get("/search-by-name", recipeController.searchRecipesByName);
+router.get("/recipe/:recipeId", auth, recipeController.fetchRecipeById);
+router.get("/featured-recipes", auth, recipeController.fetchFeaturedRecipes);
+router.get("/popular-recipes", auth, recipeController.fetchPopularRecipes);
+router.get("/search-by-name", auth, recipeController.searchRecipesByName);
 router.get(
   "/search-by-ingredients",
+  auth,
   recipeController.searchRecipesByIngredients
 );
 router.get(

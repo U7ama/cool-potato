@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
     type: String,
   },
   lifestyle: { type: String },
-  isDiabetic: { type: Boolean },
+  isDiabetic: { type: mongoose.Schema.Types.Mixed },
 });
 
 module.exports = mongoose.model("User", userSchema);
